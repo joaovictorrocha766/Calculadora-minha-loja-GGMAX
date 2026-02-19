@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Calculadora de Taxas - GGMAX</title>
+    <title>Calculadora de Taxas & Gestão - GGMAX</title>
     <style>
         :root {
             --bg-color: #121212;
@@ -13,6 +13,7 @@
             --text-gray: #b3b3b3;
             --input-bg: #2a2a2a;
             --accent-red: #e74c3c;
+            --accent-blue: #3498db;
         }
 
         body {
@@ -20,8 +21,9 @@
             background-color: var(--bg-color);
             color: var(--text-white);
             display: flex;
-            justify-content: center;
+            flex-direction: column;
             align-items: center;
+            padding: 20px;
             min-height: 100vh;
             margin: 0;
         }
@@ -33,9 +35,10 @@
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
             width: 100%;
             max-width: 450px;
+            margin-bottom: 20px;
         }
 
-        h2 { text-align: center; margin-bottom: 1.5rem; color: var(--primary-green); }
+        h2, h3 { text-align: center; margin-bottom: 1.5rem; color: var(--primary-green); }
 
         .form-group { margin-bottom: 1.2rem; }
 
@@ -59,10 +62,9 @@
         }
 
         .plan-card.active { border-color: var(--primary-green); background: #253d2f; }
-
         .plan-card span { display: block; font-size: 0.8rem; color: var(--text-gray); }
 
-        input[type="number"], input[type="text"] {
+        input[type="number"] {
             width: 100%;
             padding: 12px;
             background: var(--input-bg);
@@ -82,7 +84,7 @@
             margin-bottom: 1.5rem;
         }
 
-        button {
+        .btn-calc {
             width: 100%;
             padding: 15px;
             background-color: var(--primary-green);
@@ -93,9 +95,10 @@
             font-size: 1rem;
             cursor: pointer;
             transition: 0.3s;
+            margin-top: 10px;
         }
 
-        button:hover { background-color: #27ae60; transform: translateY(-2px); }
+        .btn-calc:hover { background-color: #27ae60; }
 
         .results {
             margin-top: 20px;
@@ -112,6 +115,54 @@
 
         .res-item.highlight { color: var(--primary-green); font-weight: bold; font-size: 1.1rem; }
         .res-item.negative { color: var(--accent-red); }
+
+        /* Estilos do Dashboard e Tabela */
+        .dashboard {
+            width: 100%;
+            max-width: 800px;
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: var(--input-bg);
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-card small { color: var(--text-gray); display: block; margin-bottom: 5px; }
+        .stat-card strong { font-size: 1.2rem; color: var(--primary-green); }
+
+        .table-container { overflow-x: auto; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            font-size: 0.85rem;
+        }
+
+        th { background: #252525; color: var(--text-gray); text-align: left; padding: 12px; }
+        td { border-bottom: 1px solid #333; padding: 12px; }
+
+        .btn-delete {
+            background: var(--accent-red);
+            color: white;
+            border: none;
+            padding: 5px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
@@ -133,25 +184,70 @@
 
     <div class="form-group">
         <label>Preço de Venda (R$)</label>
-        <input type="number" id="precoVenda" placeholder="Ex: 100" oninput="calcular()">
+        <input type="number" id="precoVenda" placeholder="0,00" oninput="calcular()">
     </div>
 
     <div class="form-group">
         <label>Custo do Produto (R$) - Opcional</label>
-        <input type="number" id="custoProduto" placeholder="Ex: 20" oninput="calcular()">
+        <input type="number" id="custoProduto" placeholder="0,00" oninput="calcular()">
     </div>
 
     <div class="results">
-        <div class="res-item"><span>Taxa Aplicada:</span> <span id="resTaxaPerc">0%</span></div>
+        <div class="res-item"><span>Taxa Aplicada:</span> <span id="resTaxaPerc">9.99%</span></div>
         <div class="res-item negative"><span>Valor da Taxa:</span> <span id="resTaxaValor">-R$ 0,00</span></div>
         <div class="res-item highlight"><span>Valor Recebido:</span> <span id="resRecebido">R$ 0,00</span></div>
         <div class="res-item"><span>Lucro Final:</span> <span id="resLucro">R$ 0,00</span></div>
-        <div class="res-item" style="color: #3498db;"><span>Margem Real:</span> <span id="resMargem">0%</span></div>
+        <div class="res-item" style="color: var(--accent-blue);"><span>Margem Real:</span> <span id="resMargem">0%</span></div>
+    </div>
+
+    <button class="btn-calc" onclick="registrarVenda()">Registrar Venda</button>
+</div>
+
+<div class="dashboard">
+    <h3>Gestão de Vendas</h3>
+    
+    <div class="stats-grid">
+        <div class="stat-card">
+            <small>Investimento Total</small>
+            <strong id="totalInvestido" style="color: var(--accent-blue);">R$ 0,00</strong>
+        </div>
+        <div class="stat-card">
+            <small>Faturamento Bruto</small>
+            <strong id="totalRecebido">R$ 0,00</strong>
+        </div>
+        <div class="stat-card">
+            <small>Lucro Acumulado</small>
+            <strong id="totalLucro" style="color: var(--primary-green);">R$ 0,00</strong>
+        </div>
+    </div>
+
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Data</th>
+                    <th>Venda</th>
+                    <th>Custo</th>
+                    <th>Líquido</th>
+                    <th>Lucro</th>
+                    <th>Ação</th>
+                </tr>
+            </thead>
+            <tbody id="listaVendas">
+                </tbody>
+        </table>
     </div>
 </div>
 
 <script>
     let taxaBase = 9.99;
+    let vendas = JSON.parse(localStorage.getItem('vendasGGMAX')) || [];
+
+    // Inicializar ao carregar
+    window.onload = () => {
+        renderizarVendas();
+        calcular();
+    };
 
     function selectPlan(element, taxa) {
         document.querySelectorAll('.plan-card').forEach(card => card.classList.remove('active'));
@@ -165,23 +261,81 @@
         const custoProduto = parseFloat(document.getElementById('custoProduto').value) || 0;
         const isMax = document.getElementById('planoMax').checked;
 
-        // Cálculo da taxa total
         let taxaFinalPerc = taxaBase + (isMax ? 2.99 : 0);
         let valorTaxa = (precoVenda * taxaFinalPerc) / 100;
         let valorRecebido = precoVenda - valorTaxa;
         let lucroFinal = valorRecebido - custoProduto;
-        
-        // Cálculo da Margem Real (Lucro sobre o custo)
         let margemReal = custoProduto > 0 ? (lucroFinal / custoProduto) * 100 : 0;
 
-        // Atualizar Tela
         document.getElementById('resTaxaPerc').innerText = taxaFinalPerc.toFixed(2) + '%';
         document.getElementById('resTaxaValor').innerText = '-R$ ' + valorTaxa.toLocaleString('pt-BR', {minimumFractionDigits: 2});
         document.getElementById('resRecebido').innerText = 'R$ ' + valorRecebido.toLocaleString('pt-BR', {minimumFractionDigits: 2});
         document.getElementById('resLucro').innerText = 'R$ ' + lucroFinal.toLocaleString('pt-BR', {minimumFractionDigits: 2});
         document.getElementById('resMargem').innerText = margemReal.toFixed(2) + '%';
+
+        return { precoVenda, custoProduto, valorRecebido, lucroFinal };
+    }
+
+    function registrarVenda() {
+        const dados = calcular();
+        if (dados.precoVenda <= 0) return alert("Insira um valor de venda!");
+
+        const novaVenda = {
+            id: Date.now(),
+            data: new Date().toLocaleDateString('pt-BR'),
+            venda: dados.precoVenda,
+            custo: dados.custoProduto,
+            recebido: dados.valorRecebido,
+            lucro: dados.lucroFinal
+        };
+
+        vendas.push(novaVenda);
+        localStorage.setItem('vendasGGMAX', JSON.stringify(vendas));
+        renderizarVendas();
+        
+        // Limpar campos
+        document.getElementById('precoVenda').value = '';
+        document.getElementById('custoProduto').value = '';
+        calcular();
+    }
+
+    function renderizarVendas() {
+        const corpoTabela = document.getElementById('listaVendas');
+        corpoTabela.innerHTML = '';
+
+        let tInvestido = 0;
+        let tRecebido = 0;
+        let tLucro = 0;
+
+        vendas.forEach(v => {
+            tInvestido += v.custo;
+            tRecebido += v.recebido;
+            tLucro += v.lucro;
+
+            corpoTabela.innerHTML += `
+                <tr>
+                    <td>${v.data}</td>
+                    <td>R$ ${v.venda.toFixed(2)}</td>
+                    <td>R$ ${v.custo.toFixed(2)}</td>
+                    <td>R$ ${v.recebido.toFixed(2)}</td>
+                    <td style="color: var(--primary-green); font-weight: bold;">R$ ${v.lucro.toFixed(2)}</td>
+                    <td><button class="btn-delete" onclick="removerVenda(${v.id})">X</button></td>
+                </tr>
+            `;
+        });
+
+        document.getElementById('totalInvestido').innerText = 'R$ ' + tInvestido.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+        document.getElementById('totalRecebido').innerText = 'R$ ' + tRecebido.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+        document.getElementById('totalLucro').innerText = 'R$ ' + tLucro.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+    }
+
+    function removerVenda(id) {
+        vendas = vendas.filter(v => v.id !== id);
+        localStorage.setItem('vendasGGMAX', JSON.stringify(vendas));
+        renderizarVendas();
     }
 </script>
 
 </body>
 </html>
+
