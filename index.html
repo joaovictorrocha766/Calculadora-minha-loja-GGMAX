@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Taxas - GGMAX</title>
+    <style>
+        :root {
+            --bg-color: #121212;
+            --card-bg: #1e1e1e;
+            --primary-green: #2ecc71;
+            --text-white: #ffffff;
+            --text-gray: #b3b3b3;
+            --input-bg: #2a2a2a;
+            --accent-red: #e74c3c;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-white);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            background-color: var(--card-bg);
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            width: 100%;
+            max-width: 450px;
+        }
+
+        h2 { text-align: center; margin-bottom: 1.5rem; color: var(--primary-green); }
+
+        .form-group { margin-bottom: 1.2rem; }
+
+        label { display: block; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-gray); }
+
+        .plans-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 1.5rem;
+        }
+
+        .plan-card {
+            background: var(--input-bg);
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: 0.3s;
+        }
+
+        .plan-card.active { border-color: var(--primary-green); background: #253d2f; }
+
+        .plan-card span { display: block; font-size: 0.8rem; color: var(--text-gray); }
+
+        input[type="number"], input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            background: var(--input-bg);
+            border: 1px solid #333;
+            border-radius: 6px;
+            color: white;
+            box-sizing: border-box;
+        }
+
+        .toggle-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--input-bg);
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 1.5rem;
+        }
+
+        button {
+            width: 100%;
+            padding: 15px;
+            background-color: var(--primary-green);
+            border: none;
+            border-radius: 6px;
+            color: black;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        button:hover { background-color: #27ae60; transform: translateY(-2px); }
+
+        .results {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #333;
+        }
+
+        .res-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+        }
+
+        .res-item.highlight { color: var(--primary-green); font-weight: bold; font-size: 1.1rem; }
+        .res-item.negative { color: var(--accent-red); }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Calculadora GGMAX</h2>
+
+    <label>Selecione o Plano</label>
+    <div class="plans-grid">
+        <div class="plan-card active" onclick="selectPlan(this, 9.99)">Prata <span>9.99%</span></div>
+        <div class="plan-card" onclick="selectPlan(this, 11.99)">Ouro <span>11.99%</span></div>
+        <div class="plan-card" onclick="selectPlan(this, 12.99)">Diamante <span>12.99%</span></div>
+    </div>
+
+    <div class="toggle-container">
+        <span>Plano Max (+2.99% adicional)</span>
+        <input type="checkbox" id="planoMax" onchange="calcular()">
+    </div>
+
+    <div class="form-group">
+        <label>Preço de Venda (R$)</label>
+        <input type="number" id="precoVenda" placeholder="Ex: 100" oninput="calcular()">
+    </div>
+
+    <div class="form-group">
+        <label>Custo do Produto (R$) - Opcional</label>
+        <input type="number" id="custoProduto" placeholder="Ex: 20" oninput="calcular()">
+    </div>
+
+    <div class="results">
+        <div class="res-item"><span>Taxa Aplicada:</span> <span id="resTaxaPerc">0%</span></div>
+        <div class="res-item negative"><span>Valor da Taxa:</span> <span id="resTaxaValor">-R$ 0,00</span></div>
+        <div class="res-item highlight"><span>Valor Recebido:</span> <span id="resRecebido">R$ 0,00</span></div>
+        <div class="res-item"><span>Lucro Final:</span> <span id="resLucro">R$ 0,00</span></div>
+        <div class="res-item" style="color: #3498db;"><span>Margem Real:</span> <span id="resMargem">0%</span></div>
+    </div>
+</div>
+
+<script>
+    let taxaBase = 9.99;
+
+    function selectPlan(element, taxa) {
+        document.querySelectorAll('.plan-card').forEach(card => card.classList.remove('active'));
+        element.classList.add('active');
+        taxaBase = taxa;
+        calcular();
+    }
+
+    function calcular() {
+        const precoVenda = parseFloat(document.getElementById('precoVenda').value) || 0;
+        const custoProduto = parseFloat(document.getElementById('custoProduto').value) || 0;
+        const isMax = document.getElementById('planoMax').checked;
+
+        // Cálculo da taxa total
+        let taxaFinalPerc = taxaBase + (isMax ? 2.99 : 0);
+        let valorTaxa = (precoVenda * taxaFinalPerc) / 100;
+        let valorRecebido = precoVenda - valorTaxa;
+        let lucroFinal = valorRecebido - custoProduto;
+        
+        // Cálculo da Margem Real (Lucro sobre o custo)
+        let margemReal = custoProduto > 0 ? (lucroFinal / custoProduto) * 100 : 0;
+
+        // Atualizar Tela
+        document.getElementById('resTaxaPerc').innerText = taxaFinalPerc.toFixed(2) + '%';
+        document.getElementById('resTaxaValor').innerText = '-R$ ' + valorTaxa.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+        document.getElementById('resRecebido').innerText = 'R$ ' + valorRecebido.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+        document.getElementById('resLucro').innerText = 'R$ ' + lucroFinal.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+        document.getElementById('resMargem').innerText = margemReal.toFixed(2) + '%';
+    }
+</script>
+
+</body>
+</html>
